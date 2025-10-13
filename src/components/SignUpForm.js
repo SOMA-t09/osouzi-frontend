@@ -19,6 +19,17 @@ function SignUpForm() {
     // フォーム送信処理
     const handleSubmit = async (e) => {
         e.preventDefault(); // フォームのデフォルト動作（ページリロード）を防止
+        setError('');
+
+        if (formData.username.length < 3 || formData.username.length > 20) {
+        setError('ユーザー名は3〜20文字で入力してください。');
+        return;
+        }
+        if (formData.password.length < 6 || formData.password.length > 20) {
+        setError('パスワードは6〜20文字で入力してください。');
+        return;
+        }
+
         try {
             await apiClient.post('/auth/signup', formData); // バックエンドにアカウント作成リクエストを送信
             alert('アカウントが作成されました！ログイン画面に進んでください。');
@@ -30,6 +41,7 @@ function SignUpForm() {
             } else {
                 setError('アカウント作成に失敗しました。入力内容を確認してください。');
             }
+
         }
     };
 
@@ -48,7 +60,7 @@ function SignUpForm() {
             <input
                 type="text"
                 name="username"
-                placeholder="ユーザー名"
+                placeholder="ユーザー名 ※3〜20文字で入力してください※"
                 value={formData.username}
                 onChange={handleChange}
                 required
@@ -58,7 +70,7 @@ function SignUpForm() {
             <input
                 type="password"
                 name="password"
-                placeholder="パスワード"
+                placeholder="パスワード ※6～20文字で入力してください※"
                 value={formData.password}
                 onChange={handleChange}
                 required

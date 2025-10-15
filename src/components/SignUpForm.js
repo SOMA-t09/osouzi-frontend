@@ -21,12 +21,28 @@ function SignUpForm() {
         e.preventDefault(); // フォームのデフォルト動作（ページリロード）を防止
         setError('');
 
+    // --- 空欄チェック ---
+        if (!formData.username.trim() || !formData.password.trim()) {
+        setError('ユーザー名とパスワードを入力してください。');
+        return;
+        }
+
         if (formData.username.length < 3 || formData.username.length > 20) {
         setError('ユーザー名は3〜20文字で入力してください。');
         return;
         }
-        if (formData.password.length < 6 || formData.password.length > 20) {
-        setError('パスワードは6〜20文字で入力してください。');
+        if (formData.password.length < 8 || formData.password.length > 20) {
+        setError('パスワードは8〜20文字で入力してください。');
+        return;
+        }
+
+        const password = formData.password;
+        const hasLetter = /[A-Za-z]/.test(password);      // 英字を含むか
+        const hasNumber = /[0-9]/.test(password);         // 数字を含むか
+        const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password); // 記号を含むか
+
+        if (!hasLetter || !hasNumber || !hasSymbol) {
+        setError('パスワードは英字・数字・記号をそれぞれ1文字以上含めてください。');
         return;
         }
 
@@ -70,7 +86,7 @@ function SignUpForm() {
             <input
                 type="password"
                 name="password"
-                placeholder="パスワード ※6～20文字で入力してください※"
+                placeholder="パスワード ※英字・数字・記号を含む8〜20文字※"
                 value={formData.password}
                 onChange={handleChange}
                 required

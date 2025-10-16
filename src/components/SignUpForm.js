@@ -21,22 +21,27 @@ function SignUpForm() {
         e.preventDefault(); // フォームのデフォルト動作（ページリロード）を防止
         setError('');
 
-    // --- 空欄チェック ---
-        if (!formData.username.trim() || !formData.password.trim()) {
-        setError('ユーザー名とパスワードを入力してください。');
+   // --- 空欄・スペースのみチェック ---
+        if (!formData.username || !formData.username.trim()) {
+        setError('ユーザー名を入力してください。');
+        return;
+        }
+        if (!formData.password || !formData.password.trim()) {
+        setError('パスワードを入力してください。');
         return;
         }
 
-        if (formData.username.length < 3 || formData.username.length > 20) {
-        setError('ユーザー名は3〜20文字で入力してください。');
+
+        if (formData.username.trim().length < 3) {
+        setError('ユーザー名は3文字以上で入力してください。');
         return;
         }
-        if (formData.password.length < 8 || formData.password.length > 20) {
-        setError('パスワードは8〜20文字で入力してください。');
+        if (formData.password.trim().length < 8) {
+        setError('パスワードは8文字以上で入力してください。');
         return;
         }
 
-        const password = formData.password;
+        const password = formData.password.trim();
         const hasLetter = /[A-Za-z]/.test(password);      // 英字を含むか
         const hasNumber = /[0-9]/.test(password);         // 数字を含むか
         const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password); // 記号を含むか
@@ -47,7 +52,11 @@ function SignUpForm() {
         }
 
         try {
-            await apiClient.post('/auth/signup', formData); // バックエンドにアカウント作成リクエストを送信
+            await apiClient.post('/auth/signup', {
+            username: formData.username.trim(),
+            password: formData.password.trim(),
+            }); 
+            // バックエンドにアカウント作成リクエストを送信
             alert('アカウントが作成されました！ログイン画面に進んでください。');
             navigate('/login'); // ログイン画面に遷移
         } catch (err) {
@@ -76,7 +85,7 @@ function SignUpForm() {
             <input
                 type="text"
                 name="username"
-                placeholder="ユーザー名 ※3〜20文字で入力してください※"
+                placeholder="ユーザー名 ※3文字以上※"
                 value={formData.username}
                 onChange={handleChange}
                 required
@@ -86,7 +95,7 @@ function SignUpForm() {
             <input
                 type="password"
                 name="password"
-                placeholder="パスワード ※英字・数字・記号を含む8〜20文字※"
+                placeholder="パスワード ※英字・数字・記号を含む8文字以上※"
                 value={formData.password}
                 onChange={handleChange}
                 required

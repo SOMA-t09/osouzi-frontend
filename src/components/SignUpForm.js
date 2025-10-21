@@ -130,7 +130,7 @@ function SignUpForm() {
                     cursor: 'pointer',
                 }}
             >
-                ログイン画面に戻る
+                ログイン画面に戻る🔙
             </button>
         </form>
     );

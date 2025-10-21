@@ -31,7 +31,7 @@ function SignUpForm() {
         return;
         }
 
-
+ // --- 文字数チェック ---
         if (formData.username.trim().length < 3) {
         setError('ユーザー名は3文字以上で入力してください。');
         return;
@@ -40,7 +40,7 @@ function SignUpForm() {
         setError('パスワードは8文字以上で入力してください。');
         return;
         }
-
+ // --- 英数字記号チェック ---
         const password = formData.password.trim();
         const hasLetter = /[A-Za-z]/.test(password);      // 英字を含むか
         const hasNumber = /[0-9]/.test(password);         // 数字を含むか

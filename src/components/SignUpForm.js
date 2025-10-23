@@ -32,16 +32,20 @@ function SignUpForm() {
         }
 
  // --- 文字数チェック ---
-        if (formData.username.length < 3) {
+        const usernameLength = formData.username.replace(/\s+/g, '').length; // スペース除去
+        if (usernameLength < 3) {
         setError('ユーザー名は3文字以上で入力してください。');
         return;
         }
-        if (formData.password.length < 8) {
+
+        const passwordLength = formData.password.replace(/\s+/g, '').length; // スペース除去
+        if (passwordLength < 8) {
         setError('パスワードは8文字以上で入力してください。');
         return;
         }
+
  // --- 英数字記号チェック ---
-        const password = formData.password;
+        const password = formData.password.trim();
         const hasLetter = /[A-Za-z]/.test(password);      // 英字を含むか
         const hasNumber = /[0-9]/.test(password);         // 数字を含むか
         const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password); // 記号を含むか
@@ -53,8 +57,8 @@ function SignUpForm() {
 
         try {
             await apiClient.post('/auth/signup', {
-            username: formData.username,
-            password: formData.password,
+            username: formData.username.trim(),
+            password: formData.password.trim(),
             }); 
             // バックエンドにアカウント作成リクエストを送信
             alert('アカウントが作成されました！ログイン画面に進んでください。');

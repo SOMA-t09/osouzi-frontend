@@ -13,8 +13,8 @@ function LoginForms({ onLogin }) {
         e.preventDefault(); // デフォルトの送信動作を防止
         try {
             const response = await apiClient.post('/auth/login', { username, password }); // ログインリクエスト
-            const { token } = response.data; // トークンを取得
-            localStorage.setItem('token', token); // トークンをローカルストレージに保存
+            const { access_token } = response.data; // FastAPIの標準レスポンス
+            localStorage.setItem('token', access_token); // localStorageに保存
             onLogin(username); // 親コンポーネントにログインイベントを伝達
             navigate('/home'); // ホーム画面に遷移
         } catch {

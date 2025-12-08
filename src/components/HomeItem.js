@@ -20,7 +20,7 @@ function HomeItem({ task = {}, onDelete, onUpdate }) {
     };
 
     const handleDetail = () => {
-        navigate(`/room/${task.id}`);
+        navigate(`/rooms/${task.id}`);
     };
 
     const itemStyle = {

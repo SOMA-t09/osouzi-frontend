@@ -4,21 +4,20 @@ import Header from './components/Header';
 import LoginForm from './components/LoginForm';
 import SignUpForm from './components/SignUpForm';
 import OsouziHome from './components/OsouziHome';
+import RoomDetail from './components/RoomDetail';
 
 function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // ログイン状態を管理
-    const [username, setUsername] = useState(''); // ログイン中のユーザー名
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [username, setUsername] = useState('');
 
-    // ログイン処理
     const handleLogin = (username) => {
-        setIsLoggedIn(true); // ログイン状態を更新
-        setUsername(username); // ユーザー名を記録
+        setIsLoggedIn(true);
+        setUsername(username);
     };
 
-    // ログアウト処理
     const handleLogout = () => {
-        setIsLoggedIn(false); // ログイン状態をリセット
-        setUsername(''); // ユーザー名をリセット
+        setIsLoggedIn(false);
+        setUsername('');
     };
 
     const appStyle = {
@@ -29,16 +28,14 @@ function App() {
     };
 
     return (
-    
         <Router>
             <div style={appStyle}>
                 <Header />
                 <Routes>
-                    {/* ログイン画面 */}
                     <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
-                    {/* アカウント作成画面 */}
                     <Route path="/signup" element={<SignUpForm />} />
-                    {/* ToDoホーム画面 */}
+
+                    {/* ホーム（ログイン必須） */}
                     <Route
                         path="/home"
                         element={
@@ -49,15 +46,26 @@ function App() {
                             )
                         }
                     />
-                    {/* デフォルトはログイン画面へ */}
+
+                    {/* 掃除場所一覧（ログイン必須） */}
+                    <Route
+                        path="/rooms/:roomId"
+                        element={
+                            isLoggedIn ? (
+                                <RoomDetail />
+                            ) : (
+                                <Navigate to="/login" />
+                            )
+                        }
+                    />
+
+                    {/* どれにも一致しない場合 */}
                     <Route path="*" element={<Navigate to="/login" />} />
                 </Routes>
             </div>
         </Router>
     );
 }
- 
-
-
 
 export default App;
+

@@ -8,11 +8,10 @@ function OsouziHome({ onLogout, username }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // ✅ ページ読み込み時にDBからリストを取得
+    // 🔽 DBから読み込み
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
-            console.warn('トークンがありません。ログインが必要です。');
             setLoading(false);
             return;
         }
@@ -32,10 +31,19 @@ function OsouziHome({ onLogout, username }) {
         }
     };
 
+    // 🔽 リスト追加
     const handleAddTask = async (e) => {
         e.preventDefault();
         if (!title.trim()) {
             setError('部屋名を入力してください');
+            return;
+        }
+
+        const exists = tasks.some(
+            (task) => task.title === title.trim()
+        );
+        if (exists) {
+            setError('同じ部屋名は登録できません');
             return;
         }
 
@@ -46,6 +54,7 @@ function OsouziHome({ onLogout, username }) {
                 { title },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+
             setTasks([...tasks, res.data]);
             setTitle('');
             setError('');
@@ -55,6 +64,7 @@ function OsouziHome({ onLogout, username }) {
         }
     };
 
+    // 🔽 削除
     const handleDeleteTask = async (taskId) => {
         const confirmDelete = window.confirm('本当に削除しますか？');
         if (!confirmDelete) return;
@@ -64,24 +74,49 @@ function OsouziHome({ onLogout, username }) {
             await apiClient.delete(`/lists/${taskId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setTasks(tasks.filter((task) => task.id !== taskId));
+            setTasks(tasks.filter((t) => t.id !== taskId));
         } catch (err) {
             console.error('削除エラー:', err);
         }
     };
 
+    // 🔽 編集更新
     const handleUpdateTask = async (taskId, updatedTitle) => {
+        if (!updatedTitle?.trim) return; // ← ここで undefined.trim を防止！
+
+        const trimmed = updatedTitle.trim();
+
+        if (!trimmed) {
+            alert("部屋名を入力してください");
+            return;
+        }
+
+        const exists = tasks.some(
+            (t) => t.id !== taskId && t.title === trimmed
+        );
+        if (exists) {
+            alert("同じ部屋名は登録できません");
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             const res = await apiClient.put(
                 `/lists/${taskId}`,
-                { title: updatedTitle },
+                { title: trimmed },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setTasks(tasks.map((t) => (t.id === taskId ? res.data : t)));
         } catch (err) {
             console.error('更新エラー:', err);
+            alert(err?.response?.data?.detail || "更新に失敗しました");
         }
+    };
+
+    // 🔽 並び替え専用（サーバー保存なし版）
+    const handleReorder = (newOrder) => {
+        setTasks(newOrder);
+        // ★必要ならバックエンドに保存APIを追加できる
     };
 
     const containerStyle = { width: '600px', margin: '0 auto', padding: '20px' };
@@ -97,9 +132,7 @@ function OsouziHome({ onLogout, username }) {
         <div style={containerStyle}>
             <header style={headerStyle}>
                 <div>{username}でログイン中</div>
-                <button style={logoutButtonStyle} onClick={onLogout}>
-                    ログアウト
-                </button>
+                <button style={logoutButtonStyle} onClick={onLogout}>ログアウト</button>
             </header>
 
             <form style={formStyle} onSubmit={handleAddTask}>
@@ -126,7 +159,12 @@ function OsouziHome({ onLogout, username }) {
                 </button>
             </form>
 
-            <HomeList tasks={tasks} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} />
+            <HomeList
+                tasks={tasks}
+                onDelete={handleDeleteTask}
+                onUpdate={handleUpdateTask}
+                onReorder={handleReorder}   
+            />
         </div>
     );
 }

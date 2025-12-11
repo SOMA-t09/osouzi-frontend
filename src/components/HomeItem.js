@@ -100,6 +100,18 @@ function HomeItem({ task = {}, onDelete, onUpdate }) {
                     <button onClick={handleSave} style={saveButtonStyle}>
                         保存
                     </button>
+
+        {/* ▼ キャンセルボタン追加 */}
+                    <button
+                        onClick={() => {
+                            setIsEditing(false);
+                            setEditedTitle(task.title); // 元の部屋名に戻す
+                            setError('');
+                        }}
+                         style={{ ...buttonStyle, backgroundColor: "#6c757d" }}
+                    >
+                       キャンセル
+                    </button>
                 </>
             ) : (
                 <>

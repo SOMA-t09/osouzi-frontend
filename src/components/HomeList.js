@@ -58,7 +58,7 @@ function HomeList({ tasks, onDelete, onUpdate, onReorder }) {
                                                 display: "flex",
                                                 alignItems: "center",
                                                 padding: "4px",
-                                                fontSize: "13px",
+                                                fontSize: "16px",
                                                 background: snapshot.isDragging
                                                     ? "#e0f7fa"
                                                     : "#f5f5f5",

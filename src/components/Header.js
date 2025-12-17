@@ -14,15 +14,9 @@ function Header() {
         fontSize: '5.0rem', 
     };
 
-     const titleStyle2 = {
-        color: '#190', 
-        fontSize: '2.0rem', 
-    };
-
     return (
         <header style={headerStyle}>
             <h1 style={titleStyle}>掃除管理アプリ</h1>
-            <h2 style={titleStyle2}>Let's start cleaning!</h2>
         </header>
     );
 }

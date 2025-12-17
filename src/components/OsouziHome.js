@@ -56,6 +56,7 @@ function OsouziHome({ onLogout, username }) {
             );
 
             setTasks([...tasks, res.data]);
+
             setTitle('');
             setError('');
         } catch (err) {
@@ -65,53 +66,56 @@ function OsouziHome({ onLogout, username }) {
     };
 
     // 🔽 削除
-    const handleDeleteTask = async (taskId) => {
-        const confirmDelete = window.confirm('本当に削除しますか？');
-        if (!confirmDelete) return;
+const handleDeleteTask = async (task) => {
+    const confirmDelete = window.confirm( `「${task.title}」を削除しますか？`);
+    if (!confirmDelete) return;
 
-        try {
-            const token = localStorage.getItem('token');
-            await apiClient.delete(`/lists/${taskId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setTasks(tasks.filter((t) => t.id !== taskId));
-        } catch (err) {
-            console.error('削除エラー:', err);
-        }
-    };
+    try {
+        const token = localStorage.getItem('token');
+        await apiClient.delete(`/lists/${task.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
 
+        setTasks(tasks.filter((t) => t.id !== task.id));
+    } catch (err) {
+        console.error('削除エラー:', err);
+    }
+};
     // 🔽 編集更新
-    const handleUpdateTask = async (taskId, updatedTitle) => {
-        if (!updatedTitle?.trim) return; // ← ここで undefined.trim を防止！
+const handleUpdateTask = async (taskId, updatedTitle) => {
+    if (!updatedTitle?.trim) return; // undefined対策
 
-        const trimmed = updatedTitle.trim();
+    const trimmed = updatedTitle.trim();
 
-        if (!trimmed) {
-            alert("部屋名を入力してください");
-            return;
-        }
+    if (!trimmed) {
+        setError('部屋名を入力してください');
+        return;
+    }
 
-        const exists = tasks.some(
-            (t) => t.id !== taskId && t.title === trimmed
+    const exists = tasks.some(
+        (t) => t.id !== taskId && t.title === trimmed
+    );
+    if (exists) {
+        setError('同じ部屋名は登録できません');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await apiClient.put(
+            `/lists/${taskId}`,
+            { title: trimmed },
+            { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (exists) {
-            alert("同じ部屋名は登録できません");
-            return;
-        }
 
-        try {
-            const token = localStorage.getItem('token');
-            const res = await apiClient.put(
-                `/lists/${taskId}`,
-                { title: trimmed },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setTasks(tasks.map((t) => (t.id === taskId ? res.data : t)));
-        } catch (err) {
-            console.error('更新エラー:', err);
-            alert(err?.response?.data?.detail || "更新に失敗しました");
-        }
-    };
+        setTasks(tasks.map((t) => (t.id === taskId ? res.data : t)));
+        setError(''); // ✅ 成功したらエラーを消す
+    } catch (err) {
+        console.error('更新エラー:', err);
+        setError(err?.response?.data?.detail || '更新に失敗しました');
+    }
+};
+
 
     // 🔽 並び替え専用（サーバー保存なし版）
     const handleReorder = (newOrder) => {

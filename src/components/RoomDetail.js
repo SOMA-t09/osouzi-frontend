@@ -13,9 +13,23 @@ function RoomDetail() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [newPlaceName, setNewPlaceName] = useState('');
 
-    // --- 編集用 ---
+    // 編集用
     const [editingPlaceId, setEditingPlaceId] = useState(null);
     const [editingName, setEditingName] = useState('');
+
+    // エラー表示用
+    const [error, setError] = useState('');
+
+    // =============================
+    // 重複チェック（編集時は自分を除外）
+    // =============================
+    const isDuplicateName = (name, excludeId = null) => {
+        return places.some(
+            p =>
+                p.name.trim() === name.trim() &&
+                (excludeId === null || p.id !== excludeId)
+        );
+    };
 
     // --- 掃除場所一覧取得 ---
     const fetchPlaces = useCallback(async () => {
@@ -41,24 +55,37 @@ function RoomDetail() {
         fetchPlaces();
     }, [fetchPlaces]);
 
-    // --- 掃除場所削除 ---
-    const handleDelete = async (placeId) => {
+    // --- 削除 ---
+    const handleDelete = async (place) => {
+        if (!window.confirm(`「${place.name}」を削除しますか？`)) return;
+
         try {
             const token = localStorage.getItem('token');
-            await apiClient.delete(`/lists/places/${placeId}`, {
+            await apiClient.delete(`/lists/places/${place.id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            setPlaces(prev => prev.filter(p => p.id !== placeId));
-        } catch (err) {
-            alert('削除できませんでした');
+            setPlaces(prev => prev.filter(p => p.id !== place.id));
+            setError('');
+        } catch {
+            setError('削除できませんでした');
         }
     };
 
-    // --- 掃除場所追加 ---
-    const handleAddPlace = async () => {
+    // --- 追加 ---
+    const handleAddPlace = async (e) => {
+        e.preventDefault();
+
         const name = newPlaceName.trim();
-        if (!name) return;
+        if (!name) {
+            setError('掃除場所名を入力してください');
+            return;
+        }
+
+        if (isDuplicateName(name)) {
+            setError('同じ掃除場所名がすでに存在します');
+            return;
+        }
 
         try {
             const token = localStorage.getItem('token');
@@ -71,39 +98,51 @@ function RoomDetail() {
             setPlaces(prev => [...prev, res.data]);
             setNewPlaceName('');
             setShowAddForm(false);
-        } catch (err) {
-            alert('追加できませんでした');
+            setError('');
+        } catch {
+            setError('追加できませんでした');
         }
     };
 
     // --- 編集開始 ---
     const startEdit = (place) => {
+        setError('');
         setEditingPlaceId(place.id);
         setEditingName(place.name);
     };
 
-    // --- 編集保存（PUT） ---
-    const handleUpdatePlace = async () => {
-        if (!editingName.trim()) return;
+    // --- 編集保存 ---
+    const handleUpdatePlace = async (e) => {
+        e.preventDefault();
+
+        const name = editingName.trim();
+        if (!name) {
+            setError('掃除場所名を入力してください');
+            return;
+        }
+
+        if (isDuplicateName(name, editingPlaceId)) {
+            setError('同じ掃除場所名がすでに存在します');
+            return;
+        }
 
         try {
             const token = localStorage.getItem('token');
             const res = await apiClient.put(
                 `/lists/places/${editingPlaceId}`,
-                { name: editingName },
+                { name },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // state 更新
             setPlaces(prev =>
                 prev.map(p => (p.id === editingPlaceId ? res.data : p))
             );
 
-            // 編集終了
             setEditingPlaceId(null);
             setEditingName('');
-        } catch (err) {
-            alert('更新に失敗しました');
+            setError('');
+        } catch {
+            setError('更新に失敗しました');
         }
     };
 
@@ -111,9 +150,8 @@ function RoomDetail() {
     const cancelEdit = () => {
         setEditingPlaceId(null);
         setEditingName('');
+        setError('');
     };
-
-    const goBack = () => navigate('/home');
 
     if (loading) return <p>読み込み中...</p>;
 
@@ -121,36 +159,54 @@ function RoomDetail() {
         <div style={container}>
             <h2>{roomTitle || '（部屋名なし）'} の掃除場所一覧</h2>
 
-            <button style={backButton} onClick={goBack}>戻る</button>
+            {error && (
+                <p style={{ color: 'red', marginBottom: '10px' }}>
+                    {error}
+                </p>
+            )}
+
+            <button style={backButton} onClick={() => navigate('/home')}>
+                部屋一覧に戻る
+            </button>
 
             {places.length === 0 ? (
                 <p>掃除場所が登録されていません。</p>
             ) : (
                 <ul style={listStyle}>
-                    {places.map((place) => (
+                    {places.map(place => (
                         <li key={place.id} style={itemStyle}>
                             {editingPlaceId === place.id ? (
-                                <>
+                                <form onSubmit={handleUpdatePlace} style={{ display: 'flex', gap: '10px' }}>
                                     <input
-                                        type="text"
                                         value={editingName}
-                                        onChange={(e) => setEditingName(e.target.value)}
+                                        onChange={e => setEditingName(e.target.value)}
                                         style={inputStyle}
+                                        autoFocus
                                     />
-                                    <button style={submitButton} onClick={handleUpdatePlace}>
+                                    <button type="submit" style={submitButton}>
                                         保存
                                     </button>
-                                    <button style={cancelButton} onClick={cancelEdit}>
+                                    <button
+                                        type="button"
+                                        style={cancelButton}
+                                        onClick={cancelEdit}
+                                    >
                                         キャンセル
                                     </button>
-                                </>
+                                </form>
                             ) : (
                                 <>
                                     <h3>{place.name}</h3>
-                                    <button style={deleteButton} onClick={() => handleDelete(place.id)}>
+                                    <button
+                                        style={deleteButton}
+                                        onClick={() => handleDelete(place)}
+                                    >
                                         削除
                                     </button>
-                                    <button style={editButton} onClick={() => startEdit(place)}>
+                                    <button
+                                        style={editButton}
+                                        onClick={() => startEdit(place)}
+                                    >
                                         編集
                                     </button>
                                 </>
@@ -160,96 +216,60 @@ function RoomDetail() {
                 </ul>
             )}
 
-            {/* 追加フォーム */}
             {showAddForm ? (
-                <div style={formContainer}>
+                <form style={formContainer} onSubmit={handleAddPlace}>
                     <input
-                        type="text"
                         placeholder="掃除場所名"
                         value={newPlaceName}
-                        onChange={(e) => setNewPlaceName(e.target.value)}
+                        onChange={e => setNewPlaceName(e.target.value)}
                         style={inputStyle}
+                        autoFocus
                     />
-                    <button style={submitButton} onClick={handleAddPlace}>追加</button>
-                    <button style={cancelButton} onClick={() => setShowAddForm(false)}>キャンセル</button>
-                </div>
+                    <button type="submit" style={submitButton}>
+                        追加
+                    </button>
+                    <button
+                        type="button"
+                        style={cancelButton}
+                        onClick={() => {
+                            setShowAddForm(false);
+                            setError('');
+                        }}
+                    >
+                        キャンセル
+                    </button>
+                </form>
             ) : (
-                <button style={addButton} onClick={() => setShowAddForm(true)}>
-                    掃除場所を追加する
+                <button
+                    style={addButton}
+                    onClick={() => {
+                        setShowAddForm(true);
+                        setError('');
+                    }}
+                >
+                    追加
                 </button>
             )}
         </div>
     );
 }
 
-// --- styles ---
+/* ---------- styles ---------- */
 const container = { padding: '20px' };
 const listStyle = { listStyle: 'none', padding: 0 };
-const itemStyle = { padding: '15px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '10px' };
-
-const deleteButton = {
-    backgroundColor: '#dc3545',
-    color: '#fff',
-    padding: '5px 10px',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer'
+const itemStyle = {
+    padding: '15px',
+    marginBottom: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '10px'
 };
-
-const editButton = {
-    backgroundColor: '#007bff',
-    color: '#fff',
-    padding: '5px 10px',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    marginLeft: '10px'
-};
-
-const backButton = {
-    marginBottom: '15px',
-    backgroundColor: '#6c757d',
-    color: '#fff',
-    padding: '5px 10px',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer'
-};
-
-const addButton = {
-    padding: '10px',
-    backgroundColor: '#28a745',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer'
-};
-
-const formContainer = {
-    marginTop: '15px',
-    display: 'flex',
-    gap: '10px',
-    alignItems: 'center'
-};
-
+const deleteButton = { backgroundColor: '#dc3545', color: '#fff', padding: '5px 10px', border: 'none', borderRadius: '5px' };
+const editButton = { backgroundColor: '#007bff', color: '#fff', padding: '5px 10px', border: 'none', borderRadius: '5px', marginLeft: '10px' };
+const backButton = { marginBottom: '15px', backgroundColor: '#6c757d', color: '#fff', padding: '5px 10px', border: 'none', borderRadius: '5px' };
+const addButton = { padding: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '8px' };
+const formContainer = { marginTop: '15px', display: 'flex', gap: '10px' };
 const inputStyle = { padding: '5px', flex: 1 };
-
-const submitButton = {
-    padding: '5px 10px',
-    backgroundColor: '#28a745',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer'
-};
-
-const cancelButton = {
-    padding: '5px 10px',
-    backgroundColor: '#6c757d',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer'
-};
+const submitButton = { padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '5px' };
+const cancelButton = { padding: '5px 10px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '5px' };
 
 export default RoomDetail;

@@ -1,62 +1,54 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function HomeItem({ task = {}, onDelete, onUpdate }) {
+function HomeItem({ task, onDelete, onUpdate }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(task.title || '');
-    const [error, setError] = useState(''); // ← エラーメッセージ管理用
+    const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const handleSave = () => {
-        const trimmedTitle = editedTitle.trim();
-        if (!trimmedTitle) {
-            setError('部屋名を入力してください。');
-            return;
-        }
-
-        onUpdate(task.id, trimmedTitle);
-        setIsEditing(false);
-        setError(''); // 保存成功時にエラーを消す
-    };
+    if (!task || !task.id) return null;
 
     const handleDetail = () => {
         navigate(`/rooms/${task.id}`);
     };
 
+    const handleSave = () => {
+        if (!editedTitle.trim()) {
+            setError('部屋名を入力してください');
+            return;
+        }
+
+        onUpdate(task.id, editedTitle);
+        setIsEditing(false);
+        setError('');
+    };
+
+    // --- styles（元サイズ） ---
     const itemStyle = {
         padding: '15px',
-        border: '1px solid #eee',
-        borderRadius: '10px',
         marginBottom: '10px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        border: '1px solid #ddd',
+        borderRadius: '10px',
     };
 
-    const textStyle = {
-        whiteSpace: 'pre-wrap',
-        marginBottom: '10px',
-    };
+    const textStyle = { margin: 0 };
 
     const inputStyle = {
-        padding: '10px',
+        padding: '5px',
         fontSize: '16px',
         width: '100%',
-        boxSizing: 'border-box',
-        marginBottom: '10px',
+        marginBottom: '5px',
     };
 
     const buttonStyle = {
         padding: '5px 10px',
-        fontSize: '14px',
-        color: '#fff',
-        border: 'none',
-        cursor: 'pointer',
+        marginTop: '4px',
         marginRight: '5px',
+        border: 'none',
         borderRadius: '5px',
-    };
-
-    const editButtonStyle = {
-        ...buttonStyle,
-        backgroundColor: '#007bff',
+        cursor: 'pointer',
+        color: '#fff',
     };
 
     const deleteButtonStyle = {
@@ -69,61 +61,84 @@ function HomeItem({ task = {}, onDelete, onUpdate }) {
         backgroundColor: '#17a2b8',
     };
 
+    const editButtonStyle = {
+        ...buttonStyle,
+        backgroundColor: '#007bff',
+    };
+
     const saveButtonStyle = {
         ...buttonStyle,
         backgroundColor: '#28a745',
     };
 
+    const cancelButtonStyle = {
+        ...buttonStyle,
+        backgroundColor: '#6c757d',
+    };
+
     const errorStyle = {
         color: 'red',
         fontSize: '14px',
-        marginBottom: '10px',
+        marginBottom: '5px',
     };
-
-    if (!task || !task.id) return null;
 
     return (
         <li style={itemStyle}>
             {isEditing ? (
-                <>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSave();
+                    }}
+                >
                     <input
                         type="text"
                         value={editedTitle}
                         onChange={(e) => {
                             setEditedTitle(e.target.value);
-                            setError(''); // 入力中にエラーをリセット
+                            setError('');
                         }}
                         style={inputStyle}
+                        autoFocus
                     />
+
                     {error && <p style={errorStyle}>{error}</p>}
 
-                    <button onClick={handleSave} style={saveButtonStyle}>
+                    <button type="submit" style={saveButtonStyle}>
                         保存
                     </button>
 
-        {/* ▼ キャンセルボタン追加 */}
                     <button
+                        type="button"
                         onClick={() => {
                             setIsEditing(false);
-                            setEditedTitle(task.title); // 元の部屋名に戻す
+                            setEditedTitle(task.title);
                             setError('');
                         }}
-                         style={{ ...buttonStyle, backgroundColor: "#6c757d" }}
+                        style={cancelButtonStyle}
                     >
-                       キャンセル
+                        キャンセル
                     </button>
-                </>
+                </form>
             ) : (
                 <>
                     <h3 style={textStyle}>{task.title}</h3>
 
                     <button onClick={handleDetail} style={detailButtonStyle}>
-                        掃除場所の一覧を見る
+                        詳細一覧
                     </button>
-                    <button onClick={() => setIsEditing(true)} style={editButtonStyle}>
-                        部屋名を編集
+
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        style={editButtonStyle}
+                    >
+                        編集
                     </button>
-                    <button onClick={() => onDelete(task.id)} style={deleteButtonStyle}>
+
+                    <button
+                        onClick={() => onDelete(task)}
+                        style={deleteButtonStyle}
+                    >
                         削除
                     </button>
                 </>
